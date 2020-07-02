@@ -3,9 +3,8 @@ This module use cucumber's JSON report file to create an html report and send sl
 This project is being started and everything needs to be done for now, do not use it yet.
 
 ## TODO
-- Packaging it for easy deployement
-- Main executable script
 - Watch & linter
+- Configuration file
 - HTML report production
 - Slack notification
 - Historification of cucumber's report
