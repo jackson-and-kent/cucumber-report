@@ -11,3 +11,4 @@ This project is being started and everything needs to be done for now, do not us
 - Historification of cucumber's report
 - Report regression by analysing reports history
 - Report new successfull tests by analysing reports history
+- Implement test to allow anyone to update module safely

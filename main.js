@@ -1,6 +1,3 @@
-class Reporter{
-	init(options){
-		console.log("init");
-	}
+exports.loadReport = function() {
+  console.log("init");
 }
-export default new Reporter();
