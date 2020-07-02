@@ -1,11 +1,11 @@
 # Cucumber-report
-Use cucumber's JSON report file to create an html report and send slack synthesis.
+This module use cucumber's JSON report file to create an html report and send slack synthesis.
 This project is being started and everything needs to be done for now, do not use it yet.
 
 ## TODO
 - Packaging it for easy deployement
 - Main executable script
-- Configuration file
+- Watch & linter
 - HTML report production
 - Slack notification
 - Historification of cucumber's report
