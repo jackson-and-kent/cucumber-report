@@ -1,8 +1,8 @@
 # Cucumber-report
 Use cucumber's JSON report file to create an html report and send slack synthesis.
+This project is being started and everything needs to be done for now, do not use it yet.
 
 ## TODO
-This project is being started and everything needs to be done for now, do not use it yet.
 - Packaging it for easy deployement
 - Main executable script
 - Configuration file
