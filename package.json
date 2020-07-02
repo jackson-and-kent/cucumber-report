@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "This module use cucumber's JSON report file to create an html report and send slack synthesis.",
   "main": "main.js",
-  "scripts": {},
+  "scripts": {
+    "watch": "node watch.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jackson-and-kent/cucumber-report.git"
@@ -17,5 +19,15 @@
   "bugs": {
     "url": "https://github.com/jackson-and-kent/cucumber-report/issues"
   },
-  "homepage": "https://github.com/jackson-and-kent/cucumber-report#readme"
+  "homepage": "https://github.com/jackson-and-kent/cucumber-report#readme",
+  "devDependencies": {
+    "cross-spawn": "^7.0.3",
+    "eslint": "^7.3.1",
+    "node-watch": "^0.6.4"
+  },
+  "dependencies": {
+    "@giphy/js-fetch-api": "^1.5.9",
+    "@slack/web-api": "^5.10.0",
+    "isomorphic-fetch": "^2.2.1"
+  }
 }
