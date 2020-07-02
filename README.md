@@ -1,10 +1,9 @@
 # Cucumber-report
 This node module use cucumber's JSON report file to create an html report and send slack synthesis.
-This project is being started and everything needs to be done for now, do not use it yet.
 
 ## Installation
 ```
-	npm install jackson-and-kent/cucumber-report
+npm install jackson-and-kent/cucumber-report
 ```
 
 ## Usage
@@ -53,7 +52,7 @@ AfterAll(() => {
 		});
 
 	}, 1000);
-	
+
 }
 ```
 
