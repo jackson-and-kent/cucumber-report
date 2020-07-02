@@ -3,7 +3,7 @@ This node module use cucumber's JSON report file to create an html report and se
 
 ## Installation
 ```
-npm install jackson-and-kent/cucumber-report
+npm install jandk-cucumber-report
 ```
 
 ## Usage
