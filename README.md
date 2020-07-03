@@ -7,7 +7,7 @@ npm install jandk-cucumber-report
 ```
 
 ## Usage
-In your cucumber.conf.js, in an AfterAll hook (https://github.com/cucumber/cucumber-js/blob/master/docs/support_files/hooks.md), tell the reporter to load the report file, then to produce the html report and to send a synthesis to the slack channel.
+In your cucumber.conf.js, in an AfterAll hook (https://github.com/cucumber/cucumber-js/blob/master/docs/support_files/hooks.md), tell the reporter to load the report file, then to produce the html report and/or to send a synthesis to the slack channel.
 
 ```
 const reporter = require('cucumber-report');
@@ -58,6 +58,7 @@ AfterAll(() => {
 
 
 ## TODO
+- Handle empty cucumber's report
 - Historification of cucumber's report
 - Report regression by analysing reports history
 - Report new successfull tests by analysing reports history
