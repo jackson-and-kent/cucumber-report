@@ -15,159 +15,181 @@ exports.sendReport = function (report, token, conversationId, title, linkURL, li
 			}
 		}
 	];
-	slackMessage = loopOnFeaturesAndFillSlackMessage(report, slackMessageBase, limitFailedTestShown);
+	slackMessage = loopOnFeaturesAndFillSlackMessage(report, slackMessageBase, limitFailedTestShown, giphyAPIKey, giphyTag).
+		then((slackMessage) => {
 
-	sendSlackMessage(token, conversationId, slackMessage);
+			sendSlackMessage(token, conversationId, slackMessage);
+
+		});
 
 };
 
 
 function loopOnFeaturesAndFillSlackMessage (report, slackMessageBase, limitFailedTestShown, giphyAPIKey, giphyTag) {
 
-	// Loop on features
-	let failures = [];
-	let nbrElementsTotal = 0;
-	let nbrElementsPassed = 0;
-	let dividerPushed = false;
-	let totalDuration = 0;
-	let slackMessage = [...slackMessageBase];
-	report.forEach((feature) => {
+	return new Promise((resolve, reject) => {
 
-		// Loop on feature elements
-		let elementPassed = true;
-		let featurePushed = false;
-		let sectionFields = [];
-		feature.elements.forEach((element) => {
+		// Loop on features
+		let failures = [];
+		let nbrElementsTotal = 0;
+		let nbrElementsPassed = 0;
+		let dividerPushed = false;
+		let totalDuration = 0;
+		let slackMessage = [...slackMessageBase];
+		report.forEach((feature) => {
 
-			elementPassed = true;
+			// Loop on feature elements
+			let elementPassed = true;
+			let featurePushed = false;
+			let sectionFields = [];
+			feature.elements.forEach((element) => {
 
-			// Loop on steps
-			element.steps.forEach((step) => {
+				elementPassed = true;
 
-				if (step.result.status != "passed") {
+				// Loop on steps
+				element.steps.forEach((step) => {
 
-					elementPassed = false;
+					if (step.result.status != "passed") {
+
+						elementPassed = false;
+
+					}
+
+					totalDuration += Number.isInteger(step.result.duration) ? step.result.duration : 0;
+
+				});
+
+				if (elementPassed) {
+
+					nbrElementsPassed++;
+
+				} else {
+
+					if (!dividerPushed) {
+
+						slackMessage.push({
+							"type": "divider"
+						});
+						slackMessage.push({
+							"type": "section",
+							"text": {
+								"type": "mrkdwn",
+								"text": "*FAILED TESTS*"
+							}
+						});
+						dividerPushed = true;
+
+					}
+
+					if (!featurePushed) {
+
+						sectionFields.push({
+							"type": "mrkdwn",
+							"text": `*${getPathLib(feature)}*`
+						});
+						sectionFields.push({
+							"type": "mrkdwn",
+							"text": "  "
+						});
+						featurePushed = true;
+
+					}
+
+					sectionFields.push({
+						"type": "mrkdwn",
+						"text": `${element.name}`
+					});
 
 				}
 
-				totalDuration += Number.isInteger(step.result.duration) ? step.result.duration : 0;
+				nbrElementsTotal++;
+
+				if (sectionFields.length > 0) {
+
+					slackMessage.push({
+						"type": "section",
+						"fields": sectionFields
+					});
+					sectionFields = [];
+
+				}
 
 			});
 
-			if (elementPassed) {
-
-				nbrElementsPassed++;
-
-			} else {
-
-				if (!dividerPushed) {
-
-					slackMessage.push({
-						"type": "divider"
-					});
-					slackMessage.push({
-						"type": "section",
-						"text": {
-							"type": "mrkdwn",
-							"text": "*FAILED TESTS*"
-						}
-					});
-					dividerPushed = true;
-
-				}
-
-				if (!featurePushed) {
-
-					sectionFields.push({
-						"type": "mrkdwn",
-						"text": `*${getPathLib(feature)}*`
-					});
-					sectionFields.push({
-						"type": "mrkdwn",
-						"text": "  "
-					});
-					featurePushed = true;
-
-				}
-
-				sectionFields.push({
-					"type": "mrkdwn",
-					"text": `${element.name}`
-				});
-
-			}
-
-			nbrElementsTotal++;
-
-			if (sectionFields.length > 0) {
-
-				slackMessage.push({
-					"type": "section",
-					"fields": sectionFields
-				});
-				sectionFields = [];
-
-			}
-
 		});
+
+		// Slack limits the number of blocks to 50
+		// So if we have too much error to report, we show a message instead
+		let nbrLeft = nbrElementsTotal - nbrElementsPassed;
+		if (nbrLeft > limitFailedTestShown) {
+
+			slackMessage = [...slackMessageBase];
+			slackMessage.push({
+				"type": "section",
+				"text": {
+					"type": "mrkdwn",
+					"text": `${nbrElementsTotal - nbrElementsPassed} tests have failed, it's too much to be shown (limit set at ${limitFailedTestShown}).`
+				}
+			});
+
+		}
+
+		// Percentage success
+		const pourcElementPassed = Math.floor(100 * nbrElementsPassed / nbrElementsTotal);
+		slackMessage[0].text.text = slackMessage[0].text.text.
+			replace("nbrElementsTotal", nbrElementsTotal).
+			replace("nbrElementsPassed", nbrElementsPassed).
+			replace("pourcElementPassed", pourcElementPassed).
+			replace("nbrLeft", nbrLeft);
+
+		// Duration string
+		const durationString = totalDuration;
+		slackMessage[0].text.text = slackMessage[0].text.text.replace("time", durationString.toHHMMSS());
+
+		// In case of full success, we add a little gif
+		slackMessage = handleGiphyBonus(slackMessage, nbrLeft, giphyAPIKey, giphyTag).
+			then((slackMessage) => resolve(slackMessage));
 
 	});
 
-	// Slack limits the number of blocks to 50
-	// So if we have too much error to report, we show a message instead
-	let nbrLeft = nbrElementsTotal - nbrElementsPassed;
-	if (nbrLeft > limitFailedTestShown) {
+}
 
-		slackMessage = [...slackMessageBase];
-		slackMessage.push({
-			"type": "section",
-			"text": {
-				"type": "mrkdwn",
-				"text": `${nbrElementsTotal - nbrElementsPassed} tests have failed, it's too much to be shown (limit set at ${limitFailedTestShown}).`
-			}
-		});
+function handleGiphyBonus (slackMessage, nbrLeft, giphyAPIKey, giphyTag) {
 
-	}
+	return new Promise((resolve, reject) => {
 
-	// Percentage success
-	const pourcElementPassed = Math.floor(100 * nbrElementsPassed / nbrElementsTotal);
-	slackMessage[0].text.text = slackMessage[0].text.text.
-		replace("nbrElementsTotal", nbrElementsTotal).
-		replace("nbrElementsPassed", nbrElementsPassed).
-		replace("pourcElementPassed", pourcElementPassed).
-		replace("nbrLeft", nbrLeft);
+		if (nbrLeft == 0 && giphyAPIKey != undefined) {
 
-	// Duration string
-	const durationString = totalDuration;
-	slackMessage[0].text.text = slackMessage[0].text.text.replace("time", durationString.toHHMMSS());
+			const gf = new GiphyFetch(giphyAPIKey);
+			let congratsImageURL = "";
 
-	// In case of full success, we add a little gif
-	if (nbrLeft == 0 && giphyAPIKey != undefined) {
+			gf.random({
+				"tag": giphyTag
+			}).then((result) => {
 
-		const gf = new GiphyFetch(giphyAPIKey);
-		let congratsImageURL = "";
+				congratsImageURL = result.data.fixed_height_downsampled_url;
 
-		gf.random({
-			"tag": giphyTag
-		}).then((result) => {
+				slackMessage.push({
+					"type": "image",
+					"image_url": congratsImageURL,
+					"alt_text": "Congrats !!"
+				});
 
-			congratsImageURL = result.data.fixed_height_downsampled_url;
+				resolve(slackMessage);
 
-			slackMessage.push({
-				"type": "image",
-				"image_url": congratsImageURL,
-				"alt_text": "Congrats !!"
+			}).catch((error) => {
+
+				reject(error);
+
 			});
 
-		}).catch((error) => {
+		} else {
 
-			console.error(error);
+			resolve(slackMessage);
 
-		});
+		}
 
-	}
-
-	return slackMessage;
+	});
 
 }
 
