@@ -4,23 +4,32 @@ const {GiphyFetch} = require("@giphy/js-fetch-api");
 
 exports.sendReport = function (report, token, conversationId, title, linkURL, limitFailedTestShown = 10, giphyAPIKey = undefined, giphyTag = "happy") {
 
-	// SLACK MESSAGE
-	let titleText = linkURL != undefined ? `*<${linkURL}|${title}>*` : `*${title}*`;
-	let slackMessageBase = [
-		{
-			"type": "section",
-			"text": {
-				"type": "mrkdwn",
-				"text": `${titleText} - Test end to end\n*nbrElementsPassed*/nbrElementsTotal (*pourcElementPassed%*) - nbrLeft left to do - time`
-			}
+	return new Promise((resolve, reject) => {
+
+		// SLACK MESSAGE
+		let titleText = "";
+		if (title != undefined) {
+
+			titleText = linkURL != undefined ? `*<${linkURL}|${title}>*` : `*${title}*`;
+
 		}
-	];
-	slackMessage = loopOnFeaturesAndFillSlackMessage(report, slackMessageBase, limitFailedTestShown, giphyAPIKey, giphyTag).
-		then((slackMessage) => {
+		let slackMessageBase = [
+			{
+				"type": "section",
+				"text": {
+					"type": "mrkdwn",
+					"text": `${titleText}\n*nbrElementsPassed*/nbrElementsTotal (*pourcElementPassed%*) - nbrLeft left to do - time`
+				}
+			}
+		];
+		slackMessage = loopOnFeaturesAndFillSlackMessage(report, slackMessageBase, limitFailedTestShown, giphyAPIKey, giphyTag).
+			then((slackMessage) => {
 
-			sendSlackMessage(token, conversationId, slackMessage);
+				sendSlackMessage(token, conversationId, slackMessage).then(resolve).catch(reject);
 
-		});
+			});
+
+	});
 
 };
 
@@ -121,7 +130,11 @@ function loopOnFeaturesAndFillSlackMessage (report, slackMessageBase, limitFaile
 		// Slack limits the number of blocks to 50
 		// So if we have too much error to report, we show a message instead
 		let nbrLeft = nbrElementsTotal - nbrElementsPassed;
-		if (nbrLeft > limitFailedTestShown) {
+		if (limitFailedTestShown == 0) {
+
+			slackMessage = [...slackMessageBase];
+
+		} else if (nbrLeft > limitFailedTestShown) {
 
 			slackMessage = [...slackMessageBase];
 			slackMessage.push({
@@ -195,16 +208,21 @@ function handleGiphyBonus (slackMessage, nbrLeft, giphyAPIKey, giphyTag) {
 
 function sendSlackMessage (token, conversationId, slackMessage) {
 
-	const slack = new WebClient(token);
+	return new Promise((resolve, reject) => {
 
-	slack.chat.postMessage({"channel": conversationId,
-		"blocks": slackMessage}).then((result) => {
+		const slack = new WebClient(token);
 
-		console.log(`CUCUMBER REPORT - Report sent to slack : ${conversationId}`);
+		slack.chat.postMessage({"channel": conversationId,
+			"blocks": slackMessage}).then((result) => {
 
-	}).catch((error) => {
+			console.log(`CUCUMBER REPORT - Report sent to slack : ${conversationId}`);
+			resolve(result);
 
-		console.error(error);
+		}).catch((error) => {
+
+			reject(error);
+
+		});
 
 	});
 

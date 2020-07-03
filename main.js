@@ -1,6 +1,8 @@
 const fs = require("fs");
-const htmlReport = require("./create_html_report.js");
-const slackReport = require("./send_slack_report.js");
+const htmlReport = require("./src/report/create_html_report.js");
+const slackReport = require("./src/report/send_slack_report.js");
+const slackRegression = require("./src/regressions/send_slack_report.js");
+const regression = require("./src/regression.js");
 
 exports.loadReport = function (parameters) {
 
@@ -91,9 +93,9 @@ exports.toSlack = function (parameters) {
 		}
 
 		// We require the report
-		if (parameters.report == undefined) {
+		if (parameters.report == undefined && parameters.regressions == undefined) {
 
-			reject("toSlack - No JSON report given.");
+			reject("toSlack - No JSON report or regressions given.");
 
 		}
 
@@ -111,21 +113,71 @@ exports.toSlack = function (parameters) {
 
 		}
 
-		// We require the title
-		if (parameters.title == undefined) {
-
-			reject("toSlack - No title given.");
-
-		}
-
 		// Facultative parameters
+		let title = parameters.title != undefined ? parameters.title : undefined;
 		let linkURL = parameters.linkURL != undefined ? parameters.linkURL : undefined;
 		let limitFailedTestShown = parameters.limitFailedTestShown != undefined ? parameters.limitFailedTestShown : 10;
 		let giphyAPIKey = parameters.giphyAPIKey != undefined ? parameters.giphyAPIKey : undefined;
 		let giphyTag = parameters.giphyTag != undefined ? parameters.giphyTag : "happy";
 
-		slackReport.sendReport(parameters.report, parameters.token, parameters.conversationId, parameters.title, linkURL, limitFailedTestShown, giphyAPIKey, giphyTag);
-		resolve(parameters.report);
+		if (parameters.report != undefined) {
+
+			slackReport.sendReport(parameters.report, parameters.token, parameters.conversationId, title, linkURL, limitFailedTestShown, giphyAPIKey, giphyTag);
+			resolve(parameters.report);
+
+		} else {
+
+			slackRegression.sendReport(parameters.regressions, parameters.token, parameters.conversationId, title, linkURL, limitFailedTestShown, giphyAPIKey, giphyTag);
+			resolve(parameters.regressions);
+
+		}
+
+	});
+
+};
+
+exports.findRegression = function (parameters) {
+
+	return new Promise((resolve, reject) => {
+
+		if (parameters == undefined) {
+
+			reject("findRegression - No parameters given, please refere to documentation : https://github.com/jackson-and-kent/cucumber-report");
+
+		}
+
+		// We require the report
+		if (parameters.report == undefined) {
+
+			reject("findRegression - No JSON report given.");
+
+		}
+
+		// We require the log dir
+		if (parameters.logDir == undefined) {
+
+			reject("findRegression - No logDir token given.");
+
+		}
+
+		// We require the logFilenameFormat
+		if (parameters.logFilenameFormat == undefined) {
+
+			reject("findRegression - No slack logFilenameFormat given.");
+
+		}
+
+		regression.findRegression(parameters.report, parameters.logDir, parameters.logFilenameFormat).
+			then((regressions) => {
+
+				resolve(regressions);
+
+			}).
+			catch((error) => {
+
+				console.error(error);
+
+			});
 
 	});
 
