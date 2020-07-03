@@ -57,7 +57,7 @@ AfterAll(() => {
 				// Sending those to slack
 				reporter.toSlack({
 					"regressions": regressions,
-					"token": "xoxp-23680643893-23680643909-1137874862966-7d608c82b06574a107e0bfcad4ca4f48",
+					"token": "XXXXX-SLACK-APPLICATION-TOKEN", // See https://api.slack.com/apps
 					"title": "TESTING MODULE", // facultative
 					"conversationId": "#test-slack",
 					"limitFailedTestShown": 10, // Slack limits at 50 - default to 10
