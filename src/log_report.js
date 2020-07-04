@@ -38,11 +38,15 @@ exports.getEvolutionArray = function (logDir, logFilenameFormat) {
 			// We loop on the logs to construct our array
 			for (const logFilename of logs) {
 
-				let filepath = `${logDir}/${logFilename}`;
+				if (logFilename.split(".").pop() == "json") {
 
-        		logJSON = JSON.parse(fs.readFileSync(filepath));
+					let filepath = `${logDir}/${logFilename}`;
 
-        		updateEvolutionArrayWithLog(evolutionArray, logJSON, logFilename, logFilenameFormat);
+					logJSON = JSON.parse(fs.readFileSync(filepath));
+
+					updateEvolutionArrayWithLog(evolutionArray, logJSON, logFilename, logFilenameFormat);
+
+				}
 
 			}
 
@@ -78,9 +82,9 @@ function updateEvolutionArrayWithLog (evolutionArray, logJSON, logFilename, logF
 			}
 
 			const datetime = moment(logFilename.replace(".json", ""), logFilenameFormat).toISOString();
-			const featureToAdd = { ...feature };
+			const featureToAdd = {...feature};
 			delete featureToAdd.elements;
-			const testToAdd = { ...test };
+			const testToAdd = {...test};
 			delete testToAdd.steps;
 
 			const testInfos = {
