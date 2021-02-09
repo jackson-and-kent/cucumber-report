@@ -1,8 +1,9 @@
 require("isomorphic-fetch");
 const {WebClient} = require("@slack/web-api");
 const {GiphyFetch} = require("@giphy/js-fetch-api");
+const fs = require("fs");
 
-exports.sendReport = function (report, token, conversationId, title, linkURL, limitFailedTestShown = 10, giphyAPIKey = undefined, giphyTag = "happy") {
+exports.sendReport = function (report, token, conversationId, title, linkURL, sendMessageIfAllSuccess = true, limitFailedTestShown = 10, giphyAPIKey = undefined, giphyTag = "happy", filesToSend = [], sendFileIfAllSuccess = true) {
 
 	return new Promise((resolve, reject) => {
 
@@ -23,9 +24,41 @@ exports.sendReport = function (report, token, conversationId, title, linkURL, li
 			}
 		];
 		slackMessage = loopOnFeaturesAndFillSlackMessage(report, slackMessageBase, limitFailedTestShown, giphyAPIKey, giphyTag).
-			then((slackMessage) => {
+			then((data) => {
 
-				sendSlackMessage(token, conversationId, slackMessage).then(resolve).catch(reject);
+				// If it's a success, we check if we want to send
+				if (data.nbrLeft == 0 && !sendMessageIfAllSuccess) {
+
+					resolve();
+
+				} else {
+
+					sendSlackMessage(token, conversationId, data.slackMessage).then((result) => {
+
+						if (!sendFileIfAllSuccess && data.nbrLeft == 0) {
+
+							resolve();
+
+						} else if (filesToSend.length > 0) {
+
+							let filesPromises = [];
+							filesToSend.forEach((filepath, i) => {
+
+								filesPromises.push(sendFileToSlack(token, conversationId, filepath));
+
+							});
+
+							Promise.all(filesPromises).then(resolve).catch(console.error);
+
+						} else {
+
+							resolve();
+
+						}
+
+					}).catch(reject);
+
+				}
 
 			});
 
@@ -160,8 +193,7 @@ function loopOnFeaturesAndFillSlackMessage (report, slackMessageBase, limitFaile
 		slackMessage[0].text.text = slackMessage[0].text.text.replace("time", durationString.toHHMMSS());
 
 		// In case of full success, we add a little gif
-		slackMessage = handleGiphyBonus(slackMessage, nbrLeft, giphyAPIKey, giphyTag).
-			then((slackMessage) => resolve(slackMessage));
+		slackMessage = handleGiphyBonus(slackMessage, nbrLeft, giphyAPIKey, giphyTag).then(resolve);
 
 	});
 
@@ -188,7 +220,10 @@ function handleGiphyBonus (slackMessage, nbrLeft, giphyAPIKey, giphyTag) {
 					"alt_text": "Congrats !!"
 				});
 
-				resolve(slackMessage);
+				resolve({
+					slackMessage,
+					nbrLeft
+				});
 
 			}).catch((error) => {
 
@@ -198,7 +233,10 @@ function handleGiphyBonus (slackMessage, nbrLeft, giphyAPIKey, giphyTag) {
 
 		} else {
 
-			resolve(slackMessage);
+			resolve({
+				slackMessage,
+				nbrLeft
+			});
 
 		}
 
@@ -212,8 +250,10 @@ function sendSlackMessage (token, conversationId, slackMessage) {
 
 		const slack = new WebClient(token);
 
-		slack.chat.postMessage({"channel": conversationId,
-			"blocks": slackMessage}).then((result) => {
+		slack.chat.postMessage({
+			"channel": conversationId,
+			"blocks": slackMessage
+		}).then((result) => {
 
 			console.log(`CUCUMBER REPORT - Report sent to slack : ${conversationId}`);
 			resolve(result);
@@ -223,6 +263,41 @@ function sendSlackMessage (token, conversationId, slackMessage) {
 			reject(error);
 
 		});
+
+	});
+
+}
+
+function sendFileToSlack (token, conversationId, file) {
+
+	return new Promise((resolve, reject) => {
+
+		const slack = new WebClient(token);
+
+		if (!fs.existsSync(file)) {
+
+			console.log(`CUCUMBER REPORT - File ${file} not found`);
+
+		} else {
+
+			const fileStream = fs.createReadStream(file);
+
+			slack.files.upload({
+				"channels": conversationId,
+				"file": fileStream
+			}).then((result) => {
+
+				console.log(`CUCUMBER REPORT - File ${file} sent to slack : ${conversationId}`);
+				resolve(result);
+
+			}).catch((error) => {
+
+				console.log(`CUCUMBER REPORT - File ${file} was NOT sent to slack. See slack api's error below.`);
+				reject(error);
+
+			});
+
+		}
 
 	});
 

@@ -36,9 +36,12 @@ AfterAll(() => {
 			// Sending synthesis to SLACK
 			reporter.toSlack({
 				"report": report,
+				"filesToSend": ["/path/to/file1","an/other/path/to/anotherfile"], // file(s) sent
 				"title": "REPORT TITLE", // facultative
 				"token": "XXXXX-SLACK-APPLICATION-TOKEN", // See https://api.slack.com/apps
-				"conversationId": "#the-channel-you-want-the-report-sent-to",
+				"conversationId": "#the-channel-you-want-the-report-sent-to", // Remember to add your bot to the channel
+				"sendMessageIfAllSuccess": true, // default to true
+				"sendFileIfAllSuccess": true, // default to true
 				"linkURL": "http://link-to-html-report", // facultative
 				"limitFailedTestShown": 10, // Slack limits at 50 - default to 10
 				"giphyAPIKey": "XXXXXXXXXXXXXX", // If you have no failed test and wish to celebrates with a gif, get an API Key : https://developers.giphy.com/ - facultative
@@ -59,7 +62,7 @@ AfterAll(() => {
 					"regressions": regressions,
 					"token": "XXXXX-SLACK-APPLICATION-TOKEN", // See https://api.slack.com/apps
 					"title": "TESTING MODULE", // facultative
-					"conversationId": "#test-slack",
+					"conversationId": "#the-channel-you-want-the-report-sent-to",
 					"limitFailedTestShown": 10, // Slack limits at 50 - default to 10
 					"giphyAPIKey": "XXXXXXXXXXXXXX", // If you have no regressions and wish to celebrates with a gif, get an API Key : https://developers.giphy.com/ - facultative
 					"giphyTag": "happy" // facultative

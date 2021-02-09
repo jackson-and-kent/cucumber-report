@@ -24,15 +24,23 @@ exports.loadReport = function (parameters) {
 		// We make sure the file is there
 		try {
 
+
 			if (fs.existsSync(parameters.filepath)) {
 
+
+				console.log("Report found, loading.");
 				resolve(JSON.parse(fs.readFileSync(parameters.filepath)));
+
+			} else {
+
+				reject(`loadReport - File ${parameters.filepath} not found.`);
 
 			}
 
 		} catch (err) {
 
-			reject(`loadReport - File ${parameters.filepath} not found.`);
+
+			reject(`loadReport - Load erorr of file ${parameters.filepath}.`);
 
 		}
 
@@ -114,15 +122,18 @@ exports.toSlack = function (parameters) {
 		}
 
 		// Facultative parameters
-		let title = parameters.title != undefined ? parameters.title : undefined;
-		let linkURL = parameters.linkURL != undefined ? parameters.linkURL : undefined;
-		let limitFailedTestShown = parameters.limitFailedTestShown != undefined ? parameters.limitFailedTestShown : 10;
-		let giphyAPIKey = parameters.giphyAPIKey != undefined ? parameters.giphyAPIKey : undefined;
-		let giphyTag = parameters.giphyTag != undefined ? parameters.giphyTag : "happy";
+		let title = parameters.title !== undefined && parameters.title !== "" ? parameters.title : undefined;
+		let linkURL = parameters.linkURL !== undefined && parameters.linkURL !== "" ? parameters.linkURL : undefined;
+		let limitFailedTestShown = parameters.limitFailedTestShown !== undefined && parameters.limitFailedTestShown !== "" ? parameters.limitFailedTestShown : 10;
+		let giphyAPIKey = parameters.giphyAPIKey !== undefined && parameters.giphyAPIKey !== "" ? parameters.giphyAPIKey : undefined;
+		let giphyTag = parameters.giphyTag !== undefined && parameters.giphyTag !== "" ? parameters.giphyTag : "happy";
+		let sendMessageIfAllSuccess = parameters.sendMessageIfAllSuccess !== undefined && parameters.sendMessageIfAllSuccess !== "" ? parameters.sendMessageIfAllSuccess : true;
+		let filesToSend = parameters.filesToSend !== undefined && parameters.filesToSend !== "" ? parameters.filesToSend : [];
+		let sendFileIfAllSuccess = parameters.sendFileIfAllSuccess !== undefined && parameters.sendFileIfAllSuccess !== "" ? parameters.sendFileIfAllSuccess : true;
 
 		if (parameters.report != undefined) {
 
-			slackReport.sendReport(parameters.report, parameters.token, parameters.conversationId, title, linkURL, limitFailedTestShown, giphyAPIKey, giphyTag);
+			slackReport.sendReport(parameters.report, parameters.token, parameters.conversationId, title, linkURL, sendMessageIfAllSuccess, limitFailedTestShown, giphyAPIKey, giphyTag, filesToSend, sendFileIfAllSuccess);
 			resolve(parameters.report);
 
 		} else {
